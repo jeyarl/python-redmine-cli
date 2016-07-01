@@ -1,0 +1,159 @@
+#!/usr/bin/python
+from redmine import Redmine
+from optparse import OptionParser
+from colorama import init, Fore, Back, Style
+import toml
+import re
+import datetime
+
+colours = {
+        "%K" : Fore.BLACK,
+        "%R" : Fore.RED,
+        "%G" : Fore.GREEN,
+        "%Y" : Fore.YELLOW,
+        "%B" : Fore.BLUE,
+        "%M" : Fore.MAGENTA,
+        "%C" : Fore.CYAN,
+        "%W" : Fore.WHITE,
+        "%S" : Fore.RESET,
+
+        "%k" : Back.BLACK,
+        "%r" : Back.RED,
+        "%g" : Back.GREEN,
+        "%y" : Back.YELLOW,
+        "%b" : Back.BLUE,
+        "%m" : Back.MAGENTA,
+        "%c" : Back.CYAN,
+        "%w" : Back.WHITE,
+        "%s" : Back.RESET,
+
+        "%d" : Style.DIM,
+        "%n" : Style.NORMAL,
+        "%i" : Style.BRIGHT,
+        "%a" : Style.RESET_ALL
+        }
+
+colours_rep = dict((re.escape(k), v) for k, v in colours.items())
+colours_pattern = re.compile("|".join(colours_rep.keys()))
+
+class CS(str): # coloured string
+    def fmt(self, *args):
+
+        return colours_pattern.sub(lambda m: colours_rep[re.escape(m.group(0))], self).format(*args)
+    def print(self, *args):
+        print(self.fmt(*args))
+
+
+init(autoreset = True)
+
+usage = "usage: %prog [options] hours comment"
+version = "%prog 1.0.0"
+opt = OptionParser(usage = usage, version = version)
+opt.add_option("-a","--activity",
+                dest="activity", 
+                help="activity in the time entry")
+opt.add_option("-l","--list",
+                action="store_true", dest="list", default=False,
+                help="no adding of time, but show current time entries in the issue")
+opt.add_option("-d","--days-ago",
+                action="store", dest="days_ago", default=0,
+                help="time spend on, relative to today by days ago (0 is today, 1 yesterday)") 
+opt.add_option("-w","--weeks-ago",
+                action="store", dest="weeks_ago", default=0,
+                help="time spend on, relative to today by weeks ago (0 is today, 1 is 7 days ago)") 
+
+opt.add_option("-c","--checkin",
+                action="store_true", dest="checkin", default=False,
+                help="actually checkin the new log time in to the server")
+
+(options, args) = opt.parse_args()
+
+
+with open("config.toml") as confile:
+    config = toml.loads(confile.read())
+
+CS("%YRedmine time checkin app").print()
+
+CS("Host: %G{}").print(config["login"]["url"])
+
+
+redmine = Redmine(config["login"]["url"], key=config["login"]["key"])
+#issues = redmine.issue.filter(project_id=config["task"]["project"])
+
+if options.list:
+    task = redmine.issue.get(config["task"]["issue"])
+    CS("Time entries in: %G{}").print(task)
+    print (Fore.RESET+"--------------------------------------------------------")
+
+    for te in task.time_entries:
+        CS("\t%G{} %C{}%B {} %R{}").print(te.comments,te.spent_on, te.activity, te.hours)
+
+    exit()
+
+
+if len(args) < 2:
+    CS("%RIncorrect number of arguments. --help to learn.").print()
+    exit()
+
+
+
+#for issue in issues:
+    #print("*********************************************************")
+    #print (issue)
+    #print (issue.project_id)
+    #print (issue.subject)
+    #print (issue.tracker_id)
+    #print (issue.description)
+    #print (issue.estimated_hours)
+    #print (issue.done_ratio)
+
+
+days_ago = int(options.days_ago) + int(options.weeks_ago) * 7
+spent_on = datetime.date.today() - datetime.timedelta(days = days_ago)
+activity = config["task"]["activity"]
+
+enums = redmine.enumeration.filter(resource="time_entry_activities")
+
+# activities
+# development = 9
+# triage = 10 ...
+
+if options.activity != None:
+    for i,e in enumerate(enums):
+        if options.activity.lower() in str(e).lower():
+            activity = i + 9
+            CS("Activity is: %G{} %a({})").print(e,activity)
+else:
+    # just to inform what is the supposed to be activity
+    for i,e in enumerate(enums):
+        if i + 9 == activity:
+            CS("Activity is: %G{} %a({})").print(e,activity)
+
+    
+CS("Spend on is: %G{}").print(spent_on)
+
+hours = int(args[0])
+CS("Hours = %G{}").print(hours)
+descr = args[1]
+CS("Description = %G{}").print(descr)
+
+if options.checkin:
+    CS("%i%RCheckin the time entry to the server").print()
+    entry = redmine.time_entry.create(issue_id = config["task"]["issue"], hours=hours, activity_id = activity, comments = descr, spent_on = spent_on) 
+    if entry != None :
+        CS("Entry added = %G{}").print(entry)
+        #print(entry.activity_id)
+    else:
+        CS("%rFailed to add entry").print()
+else:
+    CS("%RNo data has been checked-in, use -c or --checkin to write it to the server!").print()
+
+#test = redmine.time_entry.create(issue_id=17492, hours=5, activity_id = 10,  comments = "Adding more data to plugin")
+
+
+#te = test
+#print("{}: {} [{}]".format(te.comments,te.spent_on, te.activity))
+
+#print("*** activities ***")
+
+

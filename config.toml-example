@@ -1,0 +1,21 @@
+[login]
+url = "https://redmine.server"
+# this is app key provided by your redmine server for your accout, this is used to authenticate
+key = "324252354998698698696976866"
+
+
+[task]
+project 	= "Name of the project"
+issue		= 2423 # id of the project
+activity 	= 9  # default activity id
+# ACTIVITIES
+# Development 		- 9
+# Triage 		- 10
+# Test			- 11
+# N/A			- 12
+# First Time Fix	- 13
+# Investigation		- 14
+# Meeting		- 15
+# Specification		- 16
+# Documentation		- 17
+
