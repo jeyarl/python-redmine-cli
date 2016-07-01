@@ -6,6 +6,8 @@ import toml
 import re
 import datetime
 
+
+# to support easy colours
 colours = {
         "%K" : Fore.BLACK,
         "%R" : Fore.RED,
@@ -36,14 +38,18 @@ colours = {
 colours_rep = dict((re.escape(k), v) for k, v in colours.items())
 colours_pattern = re.compile("|".join(colours_rep.keys()))
 
+### Instead of using simple string, use this to support easy colours CS("%RThis is red text,%Bblue and %Yyellow.").print()
 class CS(str): # coloured string
+    # format text 
     def fmt(self, *args):
 
         return colours_pattern.sub(lambda m: colours_rep[re.escape(m.group(0))], self).format(*args)
+    # print text and format it in one go
     def print(self, *args):
         print(self.fmt(*args))
 
 
+# make colorama reset all changes back to standard console colours on exit
 init(autoreset = True)
 
 usage = "usage: %prog [options] hours comment"
@@ -69,6 +75,7 @@ opt.add_option("-c","--checkin",
 (options, args) = opt.parse_args()
 
 
+# read configuration from this file
 with open("config.toml") as confile:
     config = toml.loads(confile.read())
 
@@ -78,7 +85,6 @@ CS("Host: %G{}").print(config["login"]["url"])
 
 
 redmine = Redmine(config["login"]["url"], key=config["login"]["key"])
-#issues = redmine.issue.filter(project_id=config["task"]["project"])
 
 if options.list:
     task = redmine.issue.get(config["task"]["issue"])
@@ -114,9 +120,16 @@ activity = config["task"]["activity"]
 
 enums = redmine.enumeration.filter(resource="time_entry_activities")
 
-# activities
-# development = 9
-# triage = 10 ...
+# ACTIVITIES
+# Development 		- 9
+# Triage 		- 10
+# Test			- 11
+# N/A			- 12
+# First Time Fix	- 13
+# Investigation		- 14
+# Meeting		- 15
+# Specification		- 16
+# Documentation		- 17
 
 if options.activity != None:
     for i,e in enumerate(enums):
@@ -142,18 +155,11 @@ if options.checkin:
     entry = redmine.time_entry.create(issue_id = config["task"]["issue"], hours=hours, activity_id = activity, comments = descr, spent_on = spent_on) 
     if entry != None :
         CS("Entry added = %G{}").print(entry)
-        #print(entry.activity_id)
     else:
         CS("%rFailed to add entry").print()
 else:
     CS("%RNo data has been checked-in, use -c or --checkin to write it to the server!").print()
 
-#test = redmine.time_entry.create(issue_id=17492, hours=5, activity_id = 10,  comments = "Adding more data to plugin")
 
-
-#te = test
-#print("{}: {} [{}]".format(te.comments,te.spent_on, te.activity))
-
-#print("*** activities ***")
 
 
