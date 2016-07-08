@@ -58,9 +58,15 @@ opt = OptionParser(usage = usage, version = version)
 opt.add_option("-a","--activity",
                 dest="activity", 
                 help="activity in the time entry")
-opt.add_option("-l","--list",
-                action="store_true", dest="list", default=False,
+opt.add_option("-i","--issue",
+                dest="issue", 
+                help="issue to work on")
+opt.add_option("","--times",
+                action="store_true", dest="times", default=False,
                 help="no adding of time, but show current time entries in the issue")
+opt.add_option("","--issues",
+                action="store_true", dest="issues", default=False,
+                help="no adding of time, but show all issues assigned to me")
 opt.add_option("-d","--days-ago",
                 action="store", dest="days_ago", default=0,
                 help="time spend on, relative to today by days ago (0 is today, 1 yesterday)") 
@@ -86,8 +92,20 @@ CS("Host: %G{}").print(config["login"]["url"])
 
 redmine = Redmine(config["login"]["url"], key=config["login"]["key"])
 
-if options.list:
-    task = redmine.issue.get(config["task"]["issue"])
+if options.issues:
+    issues = redmine.issue.filter( assigned_to_id = "me")
+    CS("All issues assigned to you").print()
+    for i in issues:
+        CS("(%W{}) %G{} %a- %B{}").print(i.id, i.subject, i.description)
+    exit()
+
+issue_id = config["task"]["issue"]
+if options.issue != None:
+    issue_id = int(options.issue)
+
+
+if options.times:
+    task = redmine.issue.get(issue_id)
     CS("Time entries in: %G{}").print(task)
     print (Fore.RESET+"--------------------------------------------------------")
 
