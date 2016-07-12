@@ -49,6 +49,14 @@ class CS(str): # coloured string
         print(self.fmt(*args))
 
 
+def get_week_day (dt):
+        wdays = ["Su","Mo","Tu","We","Th","Fr","Sa"]
+        return wdays[dt.weekday()]
+
+def get_days_ago (dt):
+    delta = datetime.date.today() - dt
+    return delta.days
+
 # make colorama reset all changes back to standard console colours on exit
 init(autoreset = True)
 
@@ -104,13 +112,15 @@ if options.issue != None:
     issue_id = int(options.issue)
 
 
+###  Reporting TIMES ###
+
 if options.times:
     task = redmine.issue.get(issue_id)
     CS("Time entries in: %G{}").print(task)
     print (Fore.RESET+"--------------------------------------------------------")
 
     for te in task.time_entries:
-        CS("\t%G{} %C{}%B {} %R{}").print(te.comments,te.spent_on, te.activity, te.hours)
+        CS("\t%G{} %C{}(%R{}%C,{})%B {} %R{}").print(te.comments,te.spent_on, get_days_ago(te.spent_on), get_week_day(te.spent_on), te.activity, te.hours)
 
     exit()
 
@@ -149,6 +159,9 @@ enums = redmine.enumeration.filter(resource="time_entry_activities")
 # Specification		- 16
 # Documentation		- 17
 
+task = redmine.issue.get(issue_id)
+CS("Addidng time for task: %G{}").print(task)
+
 if options.activity != None:
     for i,e in enumerate(enums):
         if options.activity.lower() in str(e).lower():
@@ -161,7 +174,7 @@ else:
             CS("Activity is: %G{} %a({})").print(e,activity)
 
     
-CS("Spend on is: %G{}").print(spent_on)
+CS("Spend on is: %G{} %a(%R{}%a) %G{}").print(spent_on, get_days_ago(spent_on), get_week_day(spent_on))
 
 hours = int(args[0])
 CS("Hours = %G{}").print(hours)
