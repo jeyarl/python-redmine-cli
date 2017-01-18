@@ -40,7 +40,7 @@ colours_pattern = re.compile("|".join(colours_rep.keys()))
 
 ### Instead of using simple string, use this to support easy colours CS("%RThis is red text,%Bblue and %Yyellow.").print()
 class CS(str): # coloured string
-    # format text 
+    # format text
     def fmt(self, *args):
 
         return colours_pattern.sub(lambda m: colours_rep[re.escape(m.group(0))], self).format(*args)
@@ -64,10 +64,10 @@ usage = "usage: %prog [options] hours comment"
 version = "%prog 1.0.0"
 opt = OptionParser(usage = usage, version = version)
 opt.add_option("-a","--activity",
-                dest="activity", 
+                dest="activity",
                 help="activity in the time entry")
 opt.add_option("-i","--issue",
-                dest="issue", 
+                dest="issue",
                 help="issue to work on")
 opt.add_option("","--times",
                 action="store_true", dest="times", default=False,
@@ -77,10 +77,10 @@ opt.add_option("","--issues",
                 help="no adding of time, but show all issues assigned to me")
 opt.add_option("-d","--days-ago",
                 action="store", dest="days_ago", default=0,
-                help="time spend on, relative to today by days ago (0 is today, 1 yesterday)") 
+                help="time spend on, relative to today by days ago (0 is today, 1 yesterday)")
 opt.add_option("-w","--weeks-ago",
                 action="store", dest="weeks_ago", default=0,
-                help="time spend on, relative to today by weeks ago (0 is today, 1 is 7 days ago)") 
+                help="time spend on, relative to today by weeks ago (0 is today, 1 is 7 days ago)")
 
 opt.add_option("-c","--checkin",
                 action="store_true", dest="checkin", default=False,
@@ -173,7 +173,7 @@ else:
         if i + 9 == activity:
             CS("Activity is: %G{} %a({})").print(e,activity)
 
-    
+
 CS("Spend on is: %G{} %a(%R{}%a) %G{}").print(spent_on, get_days_ago(spent_on), get_week_day(spent_on))
 
 hours = int(args[0])
@@ -183,7 +183,7 @@ CS("Description = %G{}").print(descr)
 
 if options.checkin:
     CS("%i%RCheckin the time entry to the server").print()
-    entry = redmine.time_entry.create(issue_id = config["task"]["issue"], hours=hours, activity_id = activity, comments = descr, spent_on = spent_on) 
+    entry = redmine.time_entry.create(issue_id = config["task"]["issue"], hours=hours, activity_id = activity, comments = descr, spent_on = spent_on)
     if entry != None :
         CS("Entry added = %G{}").print(entry)
     else:
