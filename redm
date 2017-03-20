@@ -5,6 +5,7 @@ from colorama import init, Fore, Back, Style
 import toml
 import re
 import datetime
+import os
 
 
 # to support easy colours
@@ -50,7 +51,7 @@ class CS(str): # coloured string
 
 
 def get_week_day (dt):
-        wdays = ["Su","Mo","Tu","We","Th","Fr","Sa"]
+        wdays = ["Mo","Tu","We","Th","Fr","Sa","Su"]
         return wdays[dt.weekday()]
 
 def get_days_ago (dt):
@@ -69,6 +70,9 @@ opt.add_option("-a","--activity",
 opt.add_option("-i","--issue",
                 dest="issue",
                 help="issue to work on")
+opt.add_option("","--activities",
+                action="store_true", dest="show_activities", default=False,
+                help="no adding of time, but show current time entries in the issue")
 opt.add_option("","--times",
                 action="store_true", dest="times", default=False,
                 help="no adding of time, but show current time entries in the issue")
@@ -88,9 +92,11 @@ opt.add_option("-c","--checkin",
 
 (options, args) = opt.parse_args()
 
+config_file = os.path.join(os.path.expanduser("~"), ".redmrc")
+
 
 # read configuration from this file
-with open("config.toml") as confile:
+with open(config_file) as confile:
     config = toml.loads(confile.read())
 
 CS("%YRedmine time checkin app").print()
@@ -99,6 +105,7 @@ CS("Host: %G{}").print(config["login"]["url"])
 
 
 redmine = Redmine(config["login"]["url"], key=config["login"]["key"])
+
 
 if options.issues:
     issues = redmine.issue.filter( assigned_to_id = "me")
@@ -124,6 +131,13 @@ if options.times:
 
     exit()
 
+enums = redmine.enumeration.filter(resource="time_entry_activities")
+
+if options.show_activities:
+    for i,e in enumerate(enums):
+        print("{:2} - {}".format(i,e))
+    exit()
+
 
 if len(args) < 2:
     CS("%RIncorrect number of arguments. --help to learn.").print()
@@ -146,31 +160,31 @@ days_ago = int(options.days_ago) + int(options.weeks_ago) * 7
 spent_on = datetime.date.today() - datetime.timedelta(days = days_ago)
 activity = config["task"]["activity"]
 
-enums = redmine.enumeration.filter(resource="time_entry_activities")
-
-# ACTIVITIES
-# Development 		- 9
-# Triage 		- 10
-# Test			- 11
-# N/A			- 12
-# First Time Fix	- 13
-# Investigation		- 14
-# Meeting		- 15
-# Specification		- 16
-# Documentation		- 17
 
 task = redmine.issue.get(issue_id)
 CS("Addidng time for task: %G{}").print(task)
 
+activities = {
+    "Research" : 0,
+    "Testing" : 5,
+    "Meeting" : 6,
+    "Development" : 7,
+    "Research" : 8,
+    "Debug" : 9,
+    "Admin" : 10,
+    "Deployment" : 11,
+}
+
 if options.activity != None:
     for i,e in enumerate(enums):
         if options.activity.lower() in str(e).lower():
-            activity = i + 9
+            activity = activities[str(e)]
             CS("Activity is: %G{} %a({})").print(e,activity)
+            break
 else:
     # just to inform what is the supposed to be activity
-    for i,e in enumerate(enums):
-        if i + 9 == activity:
+    for e,i in activities.items():
+        if i == activity:
             CS("Activity is: %G{} %a({})").print(e,activity)
 
 
@@ -178,7 +192,7 @@ CS("Spend on is: %G{} %a(%R{}%a) %G{}").print(spent_on, get_days_ago(spent_on), 
 
 hours = int(args[0])
 CS("Hours = %G{}").print(hours)
-descr = args[1]
+descr = " ".join(args[1:])
 CS("Description = %G{}").print(descr)
 
 if options.checkin:
