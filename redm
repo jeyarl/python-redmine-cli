@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/bin/env python
 from redminelib import Redmine
 from optparse import OptionParser
 from colorama import init, Fore, Back, Style
@@ -62,8 +62,11 @@ def get_days_ago (dt):
 init(autoreset = True)
 
 usage = "usage: %prog [options] hours comment"
-version = "%prog 1.0.0"
-opt = OptionParser(usage = usage, version = version)
+version = "1.0.1.0"
+
+
+version_text = "%prog {}".format(version)
+opt = OptionParser(usage = usage, version = version_text)
 opt.add_option("-a","--activity",
                 dest="activity",
                 help="activity in the time entry")
@@ -204,6 +207,7 @@ if options.checkin:
         CS("%rFailed to add entry").print_it()
 else:
     CS("%RNo data has been checked-in, use -c or --checkin to write it to the server!").print_it()
+
 
 
 
