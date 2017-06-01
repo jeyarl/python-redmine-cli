@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 from redminelib import Redmine
 from optparse import OptionParser
 from colorama import init, Fore, Back, Style
