@@ -190,7 +190,7 @@ else:
 
 CS("Spend on is: %G{} %a(%R{}%a) %G{}").print(spent_on, get_days_ago(spent_on), get_week_day(spent_on))
 
-hours = int(args[0])
+hours = float(args[0])
 CS("Hours = %G{}").print(hours)
 descr = " ".join(args[1:])
 CS("Description = %G{}").print(descr)
