@@ -1,0 +1,11 @@
+#! /bin/bash
+
+if [ ! -f ~/.redmrc ]
+then
+    cp config.toml-example ~/.redmrc
+fi
+
+pip install -U python-redmine &&\
+    pip install -U colorama && \
+    pip install -U toml && \
+    install -v redm /usr/local/bin && echo "Install complete, update ~/.redmrc to finish install" || echo "Install failed"
