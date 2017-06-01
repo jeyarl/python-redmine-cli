@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from redmine import Redmine
+from redminelib import Redmine
 from optparse import OptionParser
 from colorama import init, Fore, Back, Style
 import toml
@@ -46,7 +46,7 @@ class CS(str): # coloured string
 
         return colours_pattern.sub(lambda m: colours_rep[re.escape(m.group(0))], self).format(*args)
     # print text and format it in one go
-    def print(self, *args):
+    def print_it(self, *args):
         print(self.fmt(*args))
 
 
@@ -99,9 +99,9 @@ config_file = os.path.join(os.path.expanduser("~"), ".redmrc")
 with open(config_file) as confile:
     config = toml.loads(confile.read())
 
-CS("%YRedmine time checkin app").print()
+CS("%YRedmine time checkin app").print_it()
 
-CS("Host: %G{}").print(config["login"]["url"])
+CS("Host: %G{}").print_it(config["login"]["url"])
 
 
 redmine = Redmine(config["login"]["url"], key=config["login"]["key"])
@@ -109,9 +109,9 @@ redmine = Redmine(config["login"]["url"], key=config["login"]["key"])
 
 if options.issues:
     issues = redmine.issue.filter( assigned_to_id = "me")
-    CS("All issues assigned to you").print()
+    CS("All issues assigned to you").print_it()
     for i in issues:
-        CS("(%W{}) %G{} %a- %B{}").print(i.id, i.subject, i.description)
+        CS("(%W{}) %G{} %a- %B{}").print_it(i.id, i.subject, i.description)
     exit()
 
 issue_id = config["task"]["issue"]
@@ -123,11 +123,11 @@ if options.issue != None:
 
 if options.times:
     task = redmine.issue.get(issue_id)
-    CS("Time entries in: %G{}").print(task)
+    CS("Time entries in: %G{}").print_it(task)
     print (Fore.RESET+"--------------------------------------------------------")
 
     for te in task.time_entries:
-        CS("\t%G{} %C{}(%R{}%C,{})%B {} %R{}").print(te.comments,te.spent_on, get_days_ago(te.spent_on), get_week_day(te.spent_on), te.activity, te.hours)
+        CS("\t%G{} %C{}(%R{}%C,{})%B {} %R{}").print_it(te.comments,te.spent_on, get_days_ago(te.spent_on), get_week_day(te.spent_on), te.activity, te.hours)
 
     exit()
 
@@ -135,12 +135,12 @@ enums = redmine.enumeration.filter(resource="time_entry_activities")
 
 if options.show_activities:
     for i,e in enumerate(enums):
-        print("{:2} - {}".format(i,e))
+        print_it("{:2} - {}".format(i,e))
     exit()
 
 
 if len(args) < 2:
-    CS("%RIncorrect number of arguments. --help to learn.").print()
+    CS("%RIncorrect number of arguments. --help to learn.").print_it()
     exit()
 
 
@@ -162,7 +162,7 @@ activity = config["task"]["activity"]
 
 
 task = redmine.issue.get(issue_id)
-CS("Addidng time for task: %G{}").print(task)
+CS("Addidng time for task: %G{}").print_it(task)
 
 activities = {
     "Research" : 0,
@@ -179,31 +179,31 @@ if options.activity != None:
     for i,e in enumerate(enums):
         if options.activity.lower() in str(e).lower():
             activity = activities[str(e)]
-            CS("Activity is: %G{} %a({})").print(e,activity)
+            CS("Activity is: %G{} %a({})").print_it(e,activity)
             break
 else:
     # just to inform what is the supposed to be activity
     for e,i in activities.items():
         if i == activity:
-            CS("Activity is: %G{} %a({})").print(e,activity)
+            CS("Activity is: %G{} %a({})").print_it(e,activity)
 
 
-CS("Spend on is: %G{} %a(%R{}%a) %G{}").print(spent_on, get_days_ago(spent_on), get_week_day(spent_on))
+CS("Spend on is: %G{} %a(%R{}%a) %G{}").print_it(spent_on, get_days_ago(spent_on), get_week_day(spent_on))
 
 hours = float(args[0])
-CS("Hours = %G{}").print(hours)
+CS("Hours = %G{}").print_it(hours)
 descr = " ".join(args[1:])
-CS("Description = %G{}").print(descr)
+CS("Description = %G{}").print_it(descr)
 
 if options.checkin:
-    CS("%i%RCheckin the time entry to the server").print()
+    CS("%i%RCheckin the time entry to the server").print_it()
     entry = redmine.time_entry.create(issue_id = config["task"]["issue"], hours=hours, activity_id = activity, comments = descr, spent_on = spent_on)
     if entry != None :
-        CS("Entry added = %G{}").print(entry)
+        CS("Entry added = %G{}").print_it(entry)
     else:
-        CS("%rFailed to add entry").print()
+        CS("%rFailed to add entry").print_it()
 else:
-    CS("%RNo data has been checked-in, use -c or --checkin to write it to the server!").print()
+    CS("%RNo data has been checked-in, use -c or --checkin to write it to the server!").print_it()
 
 
 
