@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding:utf-8
 from redminelib import Redmine
 from optparse import OptionParser
 from colorama import init, Fore, Back, Style
@@ -43,8 +44,7 @@ colours_pattern = re.compile("|".join(colours_rep.keys()))
 class CS(str): # coloured string
     # format text
     def fmt(self, *args):
-
-        return colours_pattern.sub(lambda m: colours_rep[re.escape(m.group(0))], self).format(*args)
+        return (colours_pattern.sub(lambda m: colours_rep[re.escape(m.group(0))], self).format(*args))
     # print text and format it in one go
     def print_it(self, *args):
         print(self.fmt(*args))
@@ -73,6 +73,9 @@ opt.add_option("-a","--activity",
 opt.add_option("-i","--issue",
                 dest="issue",
                 help="issue to work on")
+opt.add_option("-p","--project",
+                dest="project",
+                help="project to work on")
 opt.add_option("","--activities",
                 action="store_true", dest="show_activities", default=False,
                 help="no adding of time, but show current time entries in the issue")
@@ -114,58 +117,104 @@ if options.issues:
     issues = redmine.issue.filter( assigned_to_id = "me")
     CS("All issues assigned to you").print_it()
     for i in issues:
-        CS("(%W{}) %G{} %a- %B{}").print_it(i.id, i.subject, i.description)
+        CS("#%W{} [%W{}] %a- %G{}").print_it(i.id, i.project ,i.subject.encode('utf-8'))
     exit()
 
-issue_id = config["task"]["issue"]
 if options.issue != None:
     issue_id = int(options.issue)
 
+if 'issue_id' in locals():
+    print(issue_id)
+else:
+    if options.project != None:
+        project_name = options.project.decode('utf-8')
+    else:
+        project_name = config["task"]["project"]
+
+    projects = redmine.project.all()
+    
+    for prj in projects:
+        if prj.name == project_name:
+            print("%d: %s" % (prj.id, prj.name))
+            project_id = prj.id
+    if 'project_id' not in locals():
+        print("project name error")
+        exit(2)
 
 ###  Reporting TIMES ###
 
 if options.times:
-    task = redmine.issue.get(issue_id)
-    CS("Time entries in: %G{}").print_it(task)
-    print (Fore.RESET+"--------------------------------------------------------")
+    times_sum = 0
 
-    for te in task.time_entries:
-        CS("\t%G{} %C{}(%R{}%C,{})%B {} %R{}").print_it(te.comments,te.spent_on, get_days_ago(te.spent_on), get_week_day(te.spent_on), te.activity, te.hours)
+    if options.issue != None:
+        if 'issue_id' not in locals():
+            print("set issues id")
+            exit(2)
+        try:
+            task = redmine.issue.get(issue_id)
+        except:
+            print("no such issue")
+            exit(2)
 
-    exit()
+
+        CS("Time entries in: %G{}").print_it(task)
+        print (Fore.RESET+"--------------------------------------------------------")
+    
+        for te in task.time_entries:
+            if hasattr(te, 'activity'):
+                CS("\t%C{} days ago: %C{}(%R{}%C)%B {} %R{}\t%a- %G{}").print_it(get_days_ago(te.spent_on), te.spent_on, get_week_day(te.spent_on), te.activity, te.hours,te.comments.encode('utf-8'))
+                times_sum += te.hours
+            else:
+                CS("\t%C{} days ago: %C{}(%R{}%C) %R{}\t%a- %G{}").print_it(get_days_ago(te.spent_on), te.spent_on, get_week_day(te.spent_on), te.hours, te.comments.encode('utf-8'))
+                times_sum += te.hours
+    
+        if times_sum > 0:
+            print (Fore.RESET+"--------------------------------------------------------")
+            CS("\tTotal:\t%W{}").print_it(str(datetime.timedelta(hours=times_sum)))
+    
+        exit()
+
+    elif options.project != None:
+        project = redmine.project.get(project_id)
+        CS("Time entries in: %G{}").print_it(project)
+        print (Fore.RESET+"--------------------------------------------------------")
+
+        for te in project.time_entries:
+            if hasattr(te, 'activity'):
+                CS("\t%C{} days ago: %C{}(%R{}%C)%B {} %R{}\t%a- %G{}").print_it(get_days_ago(te.spent_on), te.spent_on, get_week_day(te.spent_on), te.activity, te.hours,te.comments.encode('utf-8'))
+                times_sum += te.hours
+            else:
+                CS("\t%C{} days ago: %C{}(%R{}%C) %R{}\t%a- %G{}").print_it(get_days_ago(te.spent_on), te.spent_on, get_week_day(te.spent_on), te.hours, te.comments.encode('utf-8'))
+                times_sum += te.hours
+    
+        if times_sum > 0:
+            print (Fore.RESET+"--------------------------------------------------------")
+            CS("\tTotal:\t%W{}").print_it(str(datetime.timedelta(hours=times_sum)))
+    
+        exit()
 
 enums = redmine.enumeration.filter(resource="time_entry_activities")
 
 if options.show_activities:
     for i,e in enumerate(enums):
-        print_it("{:2} - {}".format(i,e))
+        CS("{:2} - {}").print_it(i,e)
     exit()
 
 
-if len(args) < 2:
+if len(args) == 0:
     CS("%RIncorrect number of arguments. --help to learn.").print_it()
     exit()
-
-
-
-#for issue in issues:
-    #print("*********************************************************")
-    #print (issue)
-    #print (issue.project_id)
-    #print (issue.subject)
-    #print (issue.tracker_id)
-    #print (issue.description)
-    #print (issue.estimated_hours)
-    #print (issue.done_ratio)
+elif len(args) == 1:
+    descr = ""
 
 
 days_ago = int(options.days_ago) + int(options.weeks_ago) * 7
 spent_on = datetime.date.today() - datetime.timedelta(days = days_ago)
 activity = config["task"]["activity"]
 
-
-task = redmine.issue.get(issue_id)
-CS("Addidng time for task: %G{}").print_it(task)
+if 'issue_id' in locals():
+    task = redmine.issue.get(issue_id)
+    CS("Addidng time for task: %G{}").print_it(task)
 
 activities = {
     "Research" : 0,
@@ -193,22 +242,25 @@ else:
 
 CS("Spend on is: %G{} %a(%R{}%a) %G{}").print_it(spent_on, get_days_ago(spent_on), get_week_day(spent_on))
 
-hours = float(args[0])
+try:
+    hours = float(args[0])
+except ValueError:
+    print("ValueError")
+    exit(2)
+
 CS("Hours = %G{}").print_it(hours)
 descr = " ".join(args[1:])
 CS("Description = %G{}").print_it(descr)
 
 if options.checkin:
     CS("%i%RCheckin the time entry to the server").print_it()
-    entry = redmine.time_entry.create(issue_id = config["task"]["issue"], hours=hours, activity_id = activity, comments = descr, spent_on = spent_on)
+    if 'issue_id' in locals():
+        entry = redmine.time_entry.create(issue_id = issue_id, hours = hours, activity_id = activity, comments = descr, spent_on = spent_on)
+    else:
+        entry = redmine.time_entry.create(project_id = project_id, hours = hours, activity_id = activity, comments = descr, spent_on = spent_on)
     if entry != None :
         CS("Entry added = %G{}").print_it(entry)
     else:
         CS("%rFailed to add entry").print_it()
 else:
     CS("%RNo data has been checked-in, use -c or --checkin to write it to the server!").print_it()
-
-
-
-
-
