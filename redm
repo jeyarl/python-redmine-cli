@@ -51,11 +51,21 @@ class CS(str): # coloured string
 
 
 def get_week_day (dt):
-        wdays = ["Mo","Tu","We","Th","Fr","Sa","Su"]
-        return wdays[dt.weekday()]
+    wdays = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
+    if isinstance(dt, unicode):
+    	tdatetime = datetime.datetime.strptime(dt, "%Y/%m/%d")
+    	return wdays[tdatetime.weekday()]
+    else:
+    	return wdays[dt.weekday()]
 
 def get_days_ago (dt):
-    delta = datetime.date.today() - dt
+    if isinstance(dt, unicode):
+        tdatetime = datetime.datetime.strptime(dt, "%Y/%m/%d")
+        tdate = datetime.date(tdatetime.year, tdatetime.month, tdatetime.day)
+        delta = datetime.date.today() - tdate
+    else:
+    	delta = datetime.date.today() - dt
+
     return delta.days
 
 # make colorama reset all changes back to standard console colours on exit
@@ -117,7 +127,7 @@ if options.issues:
     issues = redmine.issue.filter( assigned_to_id = "me")
     CS("All issues assigned to you").print_it()
     for i in issues:
-        CS("#%W{} [%W{}] %a- %G{}").print_it(i.id, i.project ,i.subject.encode('utf-8'))
+        CS("#%W{} [%W{}] %a- %G{}").print_it(i.id, i.project.identifier ,i.subject.encode('utf-8'))
     exit()
 
 if options.issue != None:
@@ -132,7 +142,7 @@ else:
         project_name = config["task"]["project"]
 
     projects = redmine.project.all()
-    
+
     for prj in projects:
         if prj.name == project_name:
             print("%d: %s" % (prj.id, prj.name))

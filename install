@@ -1,11 +1,27 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 if [ ! -f ~/.redmrc ]
 then
     cp config.toml-example ~/.redmrc
 fi
 
+if [ `which redm > /dev/null 2>&1; echo $?` -eq 0 ]; then
+    install_path=`dirname \`which redm\``
+fi
+
+if [ -z ${install_path} ]; then
+    install_path="/usr/local/bin"
+fi
+
+read -p "install path [default: ${install_path}]: " input
+
+if [ ! -z "${input}" ]; then
+    install_path=`eval echo $"${input}"`
+else
+    install_path=`eval echo $"${install_path}"`
+fi
+
 pip install -U python-redmine &&\
     pip install -U colorama && \
     pip install -U toml && \
-    install -v redm /usr/local/bin && echo "Install complete, update ~/.redmrc to finish install" || echo "Install failed"
+    install -v redm "${install_path}" && echo "Install complete, update ~/.redmrc to finish install" || echo "Install failed"
