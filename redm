@@ -127,7 +127,7 @@ if options.issues:
     issues = redmine.issue.filter( assigned_to_id = "me")
     CS("All issues assigned to you").print_it()
     for i in issues:
-        CS("#%W{} [%W{}] %a- %G{}").print_it(i.id, i.project.identifier ,i.subject.encode('utf-8'))
+        CS("#%W{} [%W{}] %a- %G{}").print_it(i.id, i.project, i.subject.encode('utf-8'))
     exit()
 
 if options.issue != None:
