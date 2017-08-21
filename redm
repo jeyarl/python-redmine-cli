@@ -95,6 +95,9 @@ opt.add_option("","--times",
 opt.add_option("","--issues",
                 action="store_true", dest="issues", default=False,
                 help="no adding of time, but show all issues assigned to me")
+opt.add_option("","--projects",
+                action="store_true", dest="projects", default=False,
+                help="no adding of time, but show all projects")
 opt.add_option("-d","--days-ago",
                 action="store", dest="days_ago", default=0,
                 help="time spend on, relative to today by days ago (0 is today, 1 yesterday)")
@@ -129,6 +132,15 @@ if options.issues:
     for i in issues:
         CS("#%W{} [%W{}] %a- %G{}").print_it(i.id, i.project, i.subject.encode('utf-8'))
     exit()
+
+
+if options.projects:
+    projects = redmine.project.all()
+    CS("All projects").print_it()
+    for p in projects:
+        CS("%W{}:%G{}").print_it(p.identifier, p.name.encode('utf-8'))
+    exit()
+
 
 if options.issue != None:
     issue_id = int(options.issue)
